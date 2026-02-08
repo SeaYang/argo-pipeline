@@ -55,7 +55,9 @@ root@k8s-master:/home/seayang# kubectl -n argo port-forward --address 0.0.0.0 de
 Forwarding from 0.0.0.0:2746 -> 2746
 ```
 
-浏览器访问：https://192.168.10.128:2746，**注意**一定要https开头，而不能http开头，会进入argo的登录页面，如下所示
+浏览器访问：https://192.168.10.128:2746
+
+**注意**一定要https开头，而不能http开头，会进入argo的登录页面，如下所示
 
 <img src="./images/argo页面登录.png" alt="argo页面登录" width="100%">
 
