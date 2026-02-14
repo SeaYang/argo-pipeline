@@ -1,0 +1,63 @@
+# git-sync.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: git-clone-
+  namespace: argo  # 如果Argo安装在特定命名空间
+spec:
+  entrypoint: git-clone-task
+  arguments:
+    parameters:
+      - name: git-repo-url
+        value: "git@gitee.com.:awsomeyangtu/hooktest.git"
+      - name: target-dir
+        value: "my-repo"
+  
+  templates:
+    - name: git-clone-task
+      inputs:
+        parameters:
+          - name: git-repo-url
+          - name: target-dir
+      volumes:
+        - name: ssh-volume
+          secret:
+            secretName: gitee-ssh-secret # 前面的secret名称
+            defaultMode: 0600  # 设置正确的文件权限
+      
+      container:
+        image: alpine/git:v2.49.1
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            # 创建.ssh目录并设置正确权限
+            mkdir -p /root/.ssh
+            chmod 700 /root/.ssh
+            
+            # 从secret挂载点复制SSH文件到.ssh目录
+            cp /secret/id_rsa /root/.ssh/
+            cp /secret/config /root/.ssh/
+            
+            # 设置正确的文件权限（SSH严格要求）
+            chmod 600 /root/.ssh/id_rsa
+            chmod 644 /root/.ssh/config
+            
+            # 克隆仓库
+            echo "Cloning repository {{inputs.parameters.git-repo-url}}..."
+            git clone {{inputs.parameters.git-repo-url}} {{inputs.parameters.target-dir}}
+            
+            # 检查克隆结果
+            cd {{inputs.parameters.target-dir}}
+            echo "Repository cloned successfully!"
+            echo "Current branch:"
+            git branch -a
+            echo "Latest commit:"
+            git log --oneline -5
+            
+            echo "Git operations completed!"
+
+            sleep 1800
+        volumeMounts:
+          - name: ssh-volume
+            mountPath: /secret
+            readOnly: true
